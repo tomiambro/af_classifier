@@ -1,3 +1,5 @@
 raw_signals
 output_folder
 datasets
+.ipynb_checkpoints/
+mlruns/

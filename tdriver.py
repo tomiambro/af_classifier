@@ -121,7 +121,7 @@ if __name__ == '__main__':
         # save_challenge_predictions(output_directory,f,current_score,current_label,classes)
 
 
-    os.makedirs('datasets/raw', exist_ok=True)
-    df_raw.to_feather('datasets/raw/pyhs-raw-lead2-HRV')
+    os.makedirs('datasets/', exist_ok=True)
+    df_raw.to_feather('datasets/phys-raw-lead2-HRV-raw')
     print(df_raw)
     print('Done.')
