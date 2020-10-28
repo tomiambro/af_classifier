@@ -25,7 +25,7 @@ def load_data(lead):
 	df.loc[df.label != 'AF', 'label'] = 'Non-AF'
 	return df
 
-def filter_df(df, q=.99):
+def filter_df(df, q):
 	df = df.copy()
 	cols = df.columns
 	cols = cols.drop('label')
@@ -34,9 +34,6 @@ def filter_df(df, q=.99):
 	df = df.copy()
 	return df
 
-df_raw = load_data(lead)
-
-# to_drop = ['HRV_SDSD']
-# df_raw = df_raw.drop(to_drop, axis=1)
-
-df_raw = filter_df(df_raw, q)
+if __name__ == '__main__':
+	df_raw = load_data(lead)
+	df_raw = filter_df(df_raw, q)
