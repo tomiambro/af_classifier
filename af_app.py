@@ -90,6 +90,11 @@ fig_box2 = plt.figure(figsize=(20,5))
 sns.boxplot(data=df_raw)
 st.pyplot(fig_box2, clear_figure=True)
 
+st.header("Pairplots")
+# fig_pair = plt.figure(figsize=(20,17))
+sns.pairplot(data=df_raw.sample(frac=0.1, random_state=42), hue='label', palette='Set2', height=1.5)
+st.pyplot(clear_figure=True)
+
 y = df_raw['label']
 X = df_raw.drop('label', axis=1)
 X_train, X_eval, y_train, y_eval = train_test_split(X, y, test_size=0.2, random_state=42)

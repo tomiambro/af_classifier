@@ -16,8 +16,6 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
-lead = sys.argv[1] if len(sys.argv) > 1 else 'lead2-HRV'
-q = float(sys.argv[2]) if len(sys.argv) > 2 else 0.99
 
 def load_data(lead):
 	df = pd.read_feather(f'datasets/phys-raw-{lead}-corrected')
@@ -35,5 +33,8 @@ def filter_df(df, q):
 	return df
 
 if __name__ == '__main__':
+	lead = sys.argv[1] if len(sys.argv) > 1 else 'lead2-HRV'
+	q = float(sys.argv[2]) if len(sys.argv) > 2 else 0.99
+	
 	df_raw = load_data(lead)
 	df_raw = filter_df(df_raw, q)
