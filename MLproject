@@ -1,0 +1,12 @@
+# af_classifier/MLproject
+
+name: af_classifier
+
+conda_env: conda.yml
+
+entry_points:
+  main:
+    parameters:
+      lead: {type: string, default: lead2-HRV}
+      q: {type: float, default: 0.99}
+    command: "python model_selection.py {lead} {q}"
