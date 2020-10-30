@@ -1,5 +1,6 @@
 raw_signals
 output_folder
-datasets
+/datasets/*
+!/datasets/phys-raw-lead2-HRV-corrected
 .ipynb_checkpoints/
 mlruns/
