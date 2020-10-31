@@ -1,4 +1,4 @@
-import sys
+import sys, getopt
 import subprocess
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-
+# ----------------------
 bashCommand = 'rm -rf mlruns/.trash/*'
 
 def load_data(lead):
@@ -31,45 +31,48 @@ def filter_df(df, q):
 	for col in cols:
 	    df = df[df[col] < df[col].quantile(q)]
 	return df
-
+# -----------------------
 
 
 if __name__ == '__main__':
-	lead = sys.argv[1] if len(sys.argv) > 1 else 'lead2-HRV'
-	q = float(sys.argv[2]) if len(sys.argv) > 2 else 0.99
+
+	arguments, values = getopt.getopt(sys.argv[1:],"cl:q:",["clear", "lead"])
+	for current_argument, current_value in arguments:
+		clear_flag = True if current_argument in ("-c", "--clear") else False
+		lead = current_value if current_argument in ("-l", "--lead") else 'lead2-HRV'
+		q = float(current_value) if current_argument in ("-q") else 0.99
 	
+	exp = mlflow.get_experiment_by_name('model_selection')
+
+	if clear_flag:
+		if exp != None and exp.lifecycle_stage != 'deleted':
+			print('Previous experiment exists')
+			mlflow.delete_experiment(exp.experiment_id)
+
+		print(f'Archiving experiment with id {exp.experiment_id}')
+		subprocess.run([f'ls -la mlruns/.trash/{exp.experiment_id}'], shell=True, check=True)
+		
+		try:
+			subprocess.run(bashCommand, shell=True, check=True)
+		except subprocess.CalledProcessError as e:
+			print(e)
+			exit(-1)
+		experiment_id = mlflow.create_experiment('model_selection')
+	else:
+		experiment_id = mlflow.set_experiment('model_selection')
+
 	df_raw = load_data(lead)
 	df_raw = filter_df(df_raw, q)
 	y = df_raw['label']
 	X = df_raw.drop('label', axis=1)
 	X_train, X_eval, y_train, y_eval = train_test_split(X, y, test_size=0.2, random_state=42)
-
-
 	models = [LogisticRegression(max_iter=2000, n_jobs=4), RandomForestClassifier(n_jobs=4), SVC(), KNeighborsClassifier(n_jobs=4)]
-	
-	exp = mlflow.get_experiment_by_name('model_selection')
-
-	if exp != None and exp.lifecycle_stage != 'deleted':
-		print('Previous experiment exists')
-		mlflow.delete_experiment(exp.experiment_id)
-
-	print(f'Deleting experiments archive experiment with id {exp.experiment_id}')
-	subprocess.run([f'ls -la mlruns/.trash/{exp.experiment_id}'], shell=True, check=True)
-	
-	try:
-		subprocess.run(bashCommand, shell=True, check=True)
-	except subprocess.CalledProcessError as e:
-		print(e)
-		exit(-1)
-	
-	experiment = mlflow.create_experiment('model_selection')
 
 	for model in models:
 		model.fit(X_train, y_train)
 		f1 = f1_score(y_eval, model.predict(X_eval), pos_label='AF')
-		# res = res.append({'model': f"{model}", 'f1': f1}, ignore_index=True)
 
-		with mlflow.start_run(experiment_id=experiment):
+		with mlflow.start_run(experiment_id=experiment_id):
 			print(f"Model {model}")
 			print(f"  F1: {f1}")
 
