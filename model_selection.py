@@ -1,4 +1,5 @@
 import sys
+import subprocess
 import numpy as np
 import pandas as pd
 from urllib.parse import urlparse
@@ -16,10 +17,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
+bashCommand = 'rm -rf mlruns/.trash/*'
 
 def load_data(lead):
 	df = pd.read_feather(f'datasets/phys-raw-{lead}-eda')
-	df = df.drop(to_drop, axis=1)
 	df.loc[df.label != 'AF', 'label'] = 'Non-AF'
 	return df
 
@@ -45,13 +46,30 @@ if __name__ == '__main__':
 
 
 	models = [LogisticRegression(max_iter=2000, n_jobs=4), RandomForestClassifier(n_jobs=4), SVC(), KNeighborsClassifier(n_jobs=4)]
+	
+	exp = mlflow.get_experiment_by_name('model_selection')
+
+	if exp != None and exp.lifecycle_stage != 'deleted':
+		print('Previous experiment exists')
+		mlflow.delete_experiment(exp.experiment_id)
+
+	print(f'Deleting experiments archive experiment with id {exp.experiment_id}')
+	subprocess.run([f'ls -la mlruns/.trash/{exp.experiment_id}'], shell=True, check=True)
+	
+	try:
+		subprocess.run(bashCommand, shell=True, check=True)
+	except subprocess.CalledProcessError as e:
+		print(e)
+		exit(-1)
+	
+	experiment = mlflow.create_experiment('model_selection')
 
 	for model in models:
 		model.fit(X_train, y_train)
 		f1 = f1_score(y_eval, model.predict(X_eval), pos_label='AF')
 		# res = res.append({'model': f"{model}", 'f1': f1}, ignore_index=True)
 
-		with mlflow.start_run():
+		with mlflow.start_run(experiment_id=experiment):
 			print(f"Model {model}")
 			print(f"  F1: {f1}")
 
