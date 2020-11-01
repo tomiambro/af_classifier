@@ -1,4 +1,4 @@
-# Example Python classifier for the PhysioNet/CinC Challenge 2020
+# Python classifier for the PhysioNet/CinC Challenge 2020
 
 ## Contents
 

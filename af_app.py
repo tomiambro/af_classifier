@@ -43,12 +43,12 @@ def load_data(lead='lead2-HRV'):
 	return df
 
 @st.cache
-def filter_df(df_raw):
+def filter_df(df_raw, q):
 	df = df_raw.copy()
 	cols = df_raw.columns
 	cols = cols.drop('label')
 	for col in cols:
-	    df = df[df[col] < df[col].quantile(.99)]
+	    df = df[df[col] < df[col].quantile(q)]
 	df_raw = df.copy()
 	return df_raw
 
@@ -65,8 +65,10 @@ st.pyplot(fig_den, clear_figure=True)
 """
 We drop HRV_SDSD
 """
-to_drop = ['HRV_SDSD']
+drop = st.multiselect('To drop', ['HRV_SDSD', 'HRV_MedianNN', 'HRV_HTI', 'age', 'HRV_CVSD'])
+to_drop = drop
 df_raw = df_raw.drop(to_drop, axis=1)
+
 
 st.header("Correlation Matrix")
 fig_cor = plt.figure(figsize=(16,10))
@@ -80,20 +82,43 @@ st.pyplot(fig_box1, clear_figure=True)
 
 """
 ### Let's remove some outliers
-(We keep everything below the 99th percentile)
 """
 
-#slider = st.sidebar.slider("", 800, 10100, 10100, 100)
-df_raw = filter_df(df_raw)
+q = st.slider("", 0.9, 1.0, 0.95, 0.01)
+df_raw = filter_df(df_raw, q)
 
 fig_box2 = plt.figure(figsize=(20,5))
 sns.boxplot(data=df_raw)
 st.pyplot(fig_box2, clear_figure=True)
 
-st.header("Pairplots")
+# st.header("Pairplots")
 # fig_pair = plt.figure(figsize=(20,17))
-sns.pairplot(data=df_raw.sample(frac=0.1, random_state=42), hue='label', palette='Set2', height=1.5)
+# sns.pairplot(data=df_raw.iloc[:,9:].sample(frac=0.1, random_state=42), hue='label', palette='Set2', height=1.5)
+# st.pyplot(clear_figure=True)
+
+
+
+st.header("Principal Component Analysis")
+scal = StandardScaler()
+df_scal = scal.fit_transform(df_raw.drop('label', axis=1))
+n_comps = df_scal.shape[1]
+pca = PCA(n_components = n_comps)
+df_pca = pca.fit_transform(df_scal)
+
+xpca = pd.DataFrame(df_pca)
+
+sns.set_context("talk", font_scale=0.7)
+plt.figure(figsize=(15,6))
+plt.scatter(xpca.loc[(df_raw.label == 'AF').ravel(),0],xpca.loc[(df_raw.label == 'AF').ravel(),1], alpha = 0.3, label = 'AF')
+plt.scatter(xpca.loc[(df_raw.label == 'Non-AF').ravel(),0],xpca.loc[(df_raw.label == 'Non-AF').ravel(),1], alpha = 0.3, label = 'Non-AF')
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.title('Principal Component Analysis before feature selection')
+plt.legend(loc='upper right')
+plt.tight_layout()
 st.pyplot(clear_figure=True)
+
+
 
 y = df_raw['label']
 X = df_raw.drop('label', axis=1)
