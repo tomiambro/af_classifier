@@ -134,7 +134,7 @@ models = {
 for name, model in models.items():
 	model.fit(X_train, y_train)
 	f1 = f1_score(y_eval, model.predict(X_eval), pos_label='AF')
-	res = res.append({'model': f"{model}", 'f1': f1}, ignore_index=True)
+	res = res.append({'model': f"{name}", 'f1': f1}, ignore_index=True)
 
 st.write(res.sort_values('f1', ascending=False))
 print(res.sort_values('f1', ascending=False))
