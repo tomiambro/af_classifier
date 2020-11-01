@@ -28,7 +28,7 @@ st.title('Atrial Fibrilation Detector')
 
 """
 	Using the dataset provided by the 2020 Physionet Challenge we've developed an Atrial Fibrilation Detector trained to
-	identify AF diagnosed patiences from a dataset containing patiances with different pathologies like: PAC, RBBB, I-AVB,
+	identify AF diagnosed patiences from a dataset containing patients with different pathologies like: PAC, RBBB, I-AVB,
 	PVC, LBBB, STD, STE and healthy individuals.
 
 	Although data from 12-lead ECG was provided, for this first analysis we've only used the lead 2 data and we've processed
@@ -63,9 +63,9 @@ dendrogram = hc.dendrogram(z, labels=df_raw.drop('label',axis=1).columns, orient
 st.pyplot(fig_den, clear_figure=True)
 
 """
-We drop HRV_SDSD
+Select below to choose which features to drop. Removing only HRV_SDSD seems to yield the best results.
 """
-drop = st.multiselect('To drop', ['HRV_SDSD', 'HRV_MedianNN', 'HRV_HTI', 'age', 'HRV_CVSD'])
+drop = st.multiselect('To drop', ['HRV_SDSD', 'HRV_MedianNN', 'HRV_HTI', 'HRV_CVSD', 'age'])
 to_drop = drop
 df_raw = df_raw.drop(to_drop, axis=1)
 
@@ -82,9 +82,10 @@ st.pyplot(fig_box1, clear_figure=True)
 
 """
 ### Let's remove some outliers
+Move the slider to keep everything below the Xth quantile
 """
 
-q = st.slider("", 0.9, 1.0, 0.95, 0.01)
+q = st.slider("", 0.9, 1.0, 0.99, 0.01)
 df_raw = filter_df(df_raw, q)
 
 fig_box2 = plt.figure(figsize=(20,5))
@@ -95,7 +96,6 @@ st.pyplot(fig_box2, clear_figure=True)
 # fig_pair = plt.figure(figsize=(20,17))
 # sns.pairplot(data=df_raw.iloc[:,9:].sample(frac=0.1, random_state=42), hue='label', palette='Set2', height=1.5)
 # st.pyplot(clear_figure=True)
-
 
 
 st.header("Principal Component Analysis")
@@ -125,9 +125,13 @@ X = df_raw.drop('label', axis=1)
 X_train, X_eval, y_train, y_eval = train_test_split(X, y, test_size=0.2, random_state=42)
 res = pd.DataFrame({'model':[], 'f1':[]})
 
-models = [LogisticRegression(), RandomForestClassifier(), SVC(), KNeighborsClassifier()]
+models = {
+	'Logistic Regression': LogisticRegression(),
+	'Random Forest': RandomForestClassifier(),
+	'Suport Vectors': SVC(),
+	'KN Neighbors': KNeighborsClassifier()}
 
-for model in models:
+for name, model in models.items():
 	model.fit(X_train, y_train)
 	f1 = f1_score(y_eval, model.predict(X_eval), pos_label='AF')
 	res = res.append({'model': f"{model}", 'f1': f1}, ignore_index=True)
