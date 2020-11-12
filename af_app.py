@@ -28,7 +28,7 @@ st.title('Atrial Fibrilation Detector')
 
 """
 	Using the dataset provided by the 2020 Physionet Challenge we've developed an Atrial Fibrilation Detector trained to
-	identify AF diagnosed patiences from a dataset containing patients with different pathologies like: PAC, RBBB, I-AVB,
+	identify AF diagnosed patients from a dataset containing patients with different pathologies like: PAC, RBBB, I-AVB,
 	PVC, LBBB, STD, STE and healthy individuals.
 
 	Although data from 12-lead ECG was provided, for this first analysis we've only used the lead 2 data and we've processed
@@ -108,7 +108,7 @@ df_pca = pca.fit_transform(df_scal)
 xpca = pd.DataFrame(df_pca)
 
 sns.set_context("talk", font_scale=0.7)
-plt.figure(figsize=(15,6))
+fig = plt.figure(figsize=(15,6))
 plt.scatter(xpca.loc[(df_raw.label == 'AF').ravel(),0],xpca.loc[(df_raw.label == 'AF').ravel(),1], alpha = 0.3, label = 'AF')
 plt.scatter(xpca.loc[(df_raw.label == 'Non-AF').ravel(),0],xpca.loc[(df_raw.label == 'Non-AF').ravel(),1], alpha = 0.3, label = 'Non-AF')
 plt.xlabel('Principal Component 1')
@@ -116,7 +116,7 @@ plt.ylabel('Principal Component 2')
 plt.title('Principal Component Analysis before feature selection')
 plt.legend(loc='upper right')
 plt.tight_layout()
-st.pyplot(clear_figure=True)
+st.pyplot(fig, clear_figure=True)
 
 
 
