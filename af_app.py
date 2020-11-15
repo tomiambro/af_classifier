@@ -109,8 +109,8 @@ xpca = pd.DataFrame(df_pca)
 
 sns.set_context("talk", font_scale=0.7)
 fig = plt.figure(figsize=(15,6))
-plt.scatter(xpca.loc[(df_raw.label == 'AF').ravel(),0],xpca.loc[(df_raw.label == 'AF').ravel(),1], alpha = 0.3, label = 'AF')
-plt.scatter(xpca.loc[(df_raw.label == 'Non-AF').ravel(),0],xpca.loc[(df_raw.label == 'Non-AF').ravel(),1], alpha = 0.3, label = 'Non-AF')
+plt.scatter(xpca.loc[(df_raw.label == 'AF').ravel(),0], xpca.loc[(df_raw.label == 'AF').ravel(),1], alpha = 0.3, label = 'AF')
+plt.scatter(xpca.loc[(df_raw.label == 'Non-AF').ravel(),0], xpca.loc[(df_raw.label == 'Non-AF').ravel(),1], alpha = 0.3, label = 'Non-AF')
 plt.xlabel('Principal Component 1')
 plt.ylabel('Principal Component 2')
 plt.title('Principal Component Analysis before feature selection')
@@ -119,16 +119,15 @@ plt.tight_layout()
 st.pyplot(fig, clear_figure=True)
 
 
-
 y = df_raw['label']
 X = df_raw.drop('label', axis=1)
 X_train, X_eval, y_train, y_eval = train_test_split(X, y, test_size=0.2, random_state=42)
 res = pd.DataFrame({'model':[], 'f1':[]})
 
 models = {
-	'Logistic Regression': LogisticRegression(),
-	'Random Forest': RandomForestClassifier(),
-	'Suport Vectors': SVC(),
+	'Logistic Regression': LogisticRegression(random_state=42),
+	'Random Forest': RandomForestClassifier(random_state=42),
+	'Suport Vectors': SVC(random_state=42),
 	'KN Neighbors': KNeighborsClassifier()}
 
 for name, model in models.items():
