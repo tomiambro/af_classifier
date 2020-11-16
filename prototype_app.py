@@ -1,12 +1,15 @@
+import sys, getopt
+import subprocess
 import streamlit as st
 import pandas as pd
 import numpy as np
 import mlflow
+from urllib.parse import urlparse
 from scipy.cluster import hierarchy as hc
 from scipy.stats import spearmanr
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA, KernelPCA
 # Models
@@ -14,7 +17,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-from sklearn.metrics import f1_score, r2_score
+from sklearn.metrics import f1_score, r2_score, make_scorer
 
 def selectbox_without_default(label, options):
     options = [''] + options
@@ -107,6 +110,24 @@ def main():
 
     treatment_choice = st.selectbox("Choose feature treatment", list(treatment_options.keys()))
     clear_mlflow = st.checkbox("Clear mlflow experiments?")
+    clear_mlflow = st.button("Clear MLFlow")
+    if clear_mlflow:
+        exp = mlflow.get_experiment_by_name('model_selection')
+        if exp != None and exp.lifecycle_stage != 'deleted':
+            st.write('Previous experiment exists')
+            mlflow.delete_experiment(exp.experiment_id)
+
+        st.write(f'Archiving experiment with id {exp.experiment_id}')
+        subprocess.run([f'ls -la mlruns/.trash/{exp.experiment_id}'], shell=True, check=True)
+        
+        try:
+            subprocess.run('rm -rf mlruns/.trash/*', shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            st.write(e)
+            exit(-1)
+        experiment_id = mlflow.create_experiment('model_selection')
+    else:
+        experiment_id = mlflow.set_experiment('model_selection')
     # Mlflow tracking
     track_with_mlflow = st.checkbox("Track with mlflow?")
 
@@ -122,31 +143,58 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     res = pd.DataFrame({'model':[], 'f1':[]})
 
+    sc = make_scorer(f1_score, pos_label='AF')
+
+    if track_with_mlflow and clear_mlflow:
+        mlflow.end_run()
+        exp = mlflow.get_experiment_by_name('model_selection')
+        if exp != None and exp.lifecycle_stage != 'deleted':
+            st.write('Previous experiment exists')
+            mlflow.delete_experiment(exp.experiment_id)
+
+        st.write(f'Archiving experiment with id {exp.experiment_id}')
+        subprocess.run([f'ls -la mlruns/.trash/{exp.experiment_id}'], shell=True, check=True)
+        
+        try:
+            subprocess.run('rm -rf mlruns/.trash/*', shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            st.write(e)
+            exit(-1)
+        experiment_id = mlflow.create_experiment('model_selection')
+    else:
+        experiment_id = mlflow.set_experiment('model_selection')
+
     for name, model in models.items():
         if track_with_mlflow:
-            mlflow.set_experiment(data_choice)
+            # mlflow.set_experiment(experiment_id)
             mlflow.start_run()
-            mlflow.log_param('features', feature_choice)
+            mlflow.log_param('features', list(X.columns))
             mlflow.log_param('model', name)
 
         X_train, X_test = treatment_options[treatment_choice](X_train, X_test)
         st.write(f'Training {name}')
+        scores = cross_val_score(model, X_train, y_train, cv=4, scoring=sc, n_jobs=4)
         model.fit(X_train, y_train)
 
         # Model evaluation
-        preds_train = model.predict(X_train)
         preds_test = model.predict(X_test)
         metric_name = "f1_score"
-        metric_train = f1_score(y_train, preds_train, pos_label='AF')
         metric_test = f1_score(y_test, preds_test, pos_label='AF')
         
         # st.write(f"{metric_name}_train", round(metric_train, 3))
         # st.write(f"{metric_name}_test", round(metric_test, 3))
-        res = res.append({'model': f"{name}", 'f1': metric_test}, ignore_index=True)
+        res = res.append({'model': f"{name}", 'f1': scores.mean()}, ignore_index=True)
 
         if track_with_mlflow:
-            mlflow.log_metric(metric_name+"_train", metric_train)
-            mlflow.log_metric(metric_name+"_test", metric_test)
+            mlflow.log_metric(metric_name+"_test", scores.mean())
+            tracking_url_type_store = urlparse(mlflow.get_tracking_uri()).scheme
+
+            # Model registry does not work with file store
+            if tracking_url_type_store != "file":
+
+                mlflow.sklearn.log_model(model, "model", registered_model_name="AF_Classifier")
+            else:
+                mlflow.sklearn.log_model(model, "model")
             mlflow.end_run()
 
     st.write(res.sort_values('f1', ascending=False))
