@@ -93,14 +93,12 @@ if __name__ == '__main__':
     # model = load_12ECG_model()
 
     # Create dataset
-    columns = ['age', 'sex', 'fmax', 'mean_RR', 'mean_R_Peaks', 'mean_T_Peaks', 'mean_P_Peaks', 'mean_Q_Peaks', 'mean_S_Peaks', 'median_RR', 'median_R_Peaks', 'std_RR', 'std_R_Peaks', 'var_RR', 'var_R_Peaks', 'skew_RR', 'skew_R_Peaks', 'kurt_RR', 'kurt_R_Peaks', 'mean_P_Onsets', 'mean_T_Offsets', 'HRV', 'label']
-    df_raw = pd.DataFrame(columns=columns)
+    # columns = ['age', 'sex', 'fmax', 'mean_RR', 'mean_R_Peaks', 'mean_T_Peaks', 'mean_P_Peaks', 'mean_Q_Peaks', 'mean_S_Peaks', 'median_RR', 'median_R_Peaks', 'std_RR', 'std_R_Peaks', 'var_RR', 'var_R_Peaks', 'skew_RR', 'skew_R_Peaks', 'kurt_RR', 'kurt_R_Peaks', 'mean_P_Onsets', 'mean_T_Offsets', 'HRV', 'label']
+    # df_raw = pd.DataFrame(columns=columns)
 
     # Iterate over files.
     print('Extracting 12ECG features...')
     num_files = len(input_files)
-
-
 
     pool = mp.Pool(mp.cpu_count())
 
@@ -110,7 +108,6 @@ if __name__ == '__main__':
     pool.join()
 
     results = [r.get() for r in result_obj]
-    # print(results)
     df_raw = pd.concat(results)
     df_raw = df_raw.reset_index()
     df_raw = df_raw.drop('index', axis=1)
@@ -121,7 +118,7 @@ if __name__ == '__main__':
         # save_challenge_predictions(output_directory,f,current_score,current_label,classes)
 
 
-    os.makedirs('datasets/', exist_ok=True)
-    df_raw.to_feather('datasets/phys-raw-lead2-HRV-raw')
+    os.makedirs(f'{output_directory}/', exist_ok=True)
+    df_raw.to_feather(f'{output_directory}/phys-raw-lead2-HRV-raw')
     print(df_raw)
     print('Done.')
