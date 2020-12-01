@@ -1,4 +1,4 @@
-# Atrial Fibrilation classifier with the PhysioNet/CinC Challenge 2020 Database
+# Atrial Fibrilation classifier with the PhysioNet/CinC Challenge 2020 Database [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/tomiambro/af_classifier/af_app.py)
 
 ## Contents
 
