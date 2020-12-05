@@ -9,7 +9,7 @@ import heartpy as hp
 
 import neurokit2 as nk
 import pandas as pd
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 # import seaborn as sns
 
 def detect_peaks(ecg_measurements,signal_frequency,gain):
@@ -227,7 +227,8 @@ def get_HRVs_values(data, header_data):
     for iline in header_data:
         if iline.startswith('#Age'):
             tmp_age = iline.split(': ')[1].strip()
-            age = int(tmp_age if tmp_age != 'NaN' else 57)
+            # age = int(tmp_age if tmp_age != 'NaN' else 57)
+            age = int(tmp_age)
         elif iline.startswith('#Sex'):
             tmp_sex = iline.split(': ')[1]
             if tmp_sex.strip()=='Female':
@@ -243,23 +244,31 @@ def get_HRVs_values(data, header_data):
     ecg_signal = nk.ecg_clean(signal*gain, sampling_rate=sample_Fs, method="biosppy")
     _ , rpeaks = nk.ecg_peaks(ecg_signal, sampling_rate=sample_Fs)
     hrv_time = nk.hrv_time(rpeaks, sampling_rate=sample_Fs)
-    # hrv_non = nk.hrv_nonlinear(rpeaks, sampling_rate=sample_Fs)
-    try:
-        signal_peak, waves_peak = nk.ecg_delineate(ecg_signal, rpeaks, sampling_rate=sample_Fs)
-        p_peaks = waves_peak['ECG_P_Peaks']
-    except ValueError:
-        print('Exception raised!')
-        pass
+    
+    peaks, idx = detect_peaks(signal, sample_Fs, gain)
+    print(len(signal), len(idx))
+    plt.plot(signal)
+    plt.show()
+    rr_intervals = idx / (sample_Fs * 1000)
+    rr_intervals = pd.Series(rr_intervals)
+    rr_ma = rr_intervals.rolling(3)
 
-    p_peaks = np.asarray(p_peaks, dtype=float)
-    p_peaks = p_peaks[~np.isnan(p_peaks)]
-    p_peaks = [int(a) for a in p_peaks]
-    mean_P_Peaks = np.mean([signal[w] for w in p_peaks])
 
-    hrv_time['mean_P_Peaks'] = mean_P_Peaks
+
+    # try:
+    #     signal_peak, waves_peak = nk.ecg_delineate(ecg_signal, rpeaks, sampling_rate=sample_Fs)
+    #     p_peaks = waves_peak['ECG_P_Peaks']
+    # except ValueError:
+    #     print('Exception raised!')
+    #     pass
+    # p_peaks = np.asarray(p_peaks, dtype=float)
+    # p_peaks = p_peaks[~np.isnan(p_peaks)]
+    # p_peaks = [int(a) for a in p_peaks]
+    # mean_P_Peaks = np.mean([signal[w] for w in p_peaks])
+    # hrv_time['mean_P_Peaks'] = mean_P_Peaks
+    
     hrv_time['age'] = age
     hrv_time['label'] = label
-    # df = pd.concat([hrv_time, hrv_non], axis=1)
     
     return hrv_time
 

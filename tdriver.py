@@ -3,13 +3,12 @@
 import numpy as np, os, sys
 import pandas as pd
 from scipy.io import loadmat
-from run_12ECG_classifier import load_12ECG_model, run_12ECG_classifier
+# from run_12ECG_classifier import load_12ECG_model, run_12ECG_classifier
 from get_12ECG_features import get_12ECG_features_labels, get_HRVs_values
 
 import multiprocessing as mp
 
 def load_challenge_data(filename):
-
 
     x = loadmat(filename)
     data = np.asarray(x['val'], dtype=np.float64)
@@ -71,11 +70,16 @@ def get_classes(input_directory,files):
 
 if __name__ == '__main__':
     # Parse arguments.
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         raise Exception('Include the input and output directories as arguments, e.g., python driver.py input output.')
 
     input_directory = sys.argv[1]
     output_directory = sys.argv[2]
+    is_test = False
+    if len(sys.argv) > 3:
+        is_test = True if sys.argv[3] == '--test' else False
+
+    print(is_test)
 
     # Find files.
     input_files = []
@@ -86,15 +90,15 @@ if __name__ == '__main__':
     if not os.path.isdir(output_directory):
         os.mkdir(output_directory)
 
-    classes=get_classes(input_directory,input_files)
+    # classes = get_classes(input_directory,input_files)
 
     # Load model.
-    print('Loading 12ECG model...')
+    # print('Loading 12ECG model...')
     # model = load_12ECG_model()
 
     # Create dataset
     # columns = ['age', 'sex', 'fmax', 'mean_RR', 'mean_R_Peaks', 'mean_T_Peaks', 'mean_P_Peaks', 'mean_Q_Peaks', 'mean_S_Peaks', 'median_RR', 'median_R_Peaks', 'std_RR', 'std_R_Peaks', 'var_RR', 'var_R_Peaks', 'skew_RR', 'skew_R_Peaks', 'kurt_RR', 'kurt_R_Peaks', 'mean_P_Onsets', 'mean_T_Offsets', 'HRV', 'label']
-    # df_raw = pd.DataFrame(columns=columns)
+    df_raw = pd.DataFrame()
 
     # Iterate over files.
     print('Extracting 12ECG features...')
@@ -117,8 +121,9 @@ if __name__ == '__main__':
         # Save results.
         # save_challenge_predictions(output_directory,f,current_score,current_label,classes)
 
-
-    os.makedirs(f'{output_directory}/', exist_ok=True)
-    df_raw.to_feather(f'{output_directory}/phys-raw-lead2-HRV-raw')
+    if not is_test:
+        os.makedirs(f'{output_directory}/', exist_ok=True)
+        df_raw.to_feather(f'{output_directory}/phys-raw-lead2-base-raw')
+    
     print(df_raw)
     print('Done.')
