@@ -227,8 +227,8 @@ def get_HRVs_values(data, header_data):
     for iline in header_data:
         if iline.startswith('#Age'):
             tmp_age = iline.split(': ')[1].strip()
-            # age = int(tmp_age if tmp_age != 'NaN' else 57)
-            age = int(tmp_age)
+            age = int(tmp_age if tmp_age != 'NaN' else 57)
+            # age = int(tmp_age)
         elif iline.startswith('#Sex'):
             tmp_sex = iline.split(': ')[1]
             if tmp_sex.strip()=='Female':
@@ -246,26 +246,25 @@ def get_HRVs_values(data, header_data):
     hrv_time = nk.hrv_time(rpeaks, sampling_rate=sample_Fs)
     
     peaks, idx = detect_peaks(signal, sample_Fs, gain)
-    print(len(signal), len(idx))
-    plt.plot(signal)
-    plt.show()
+    # print(len(signal), len(idx))
     rr_intervals = idx / (sample_Fs * 1000)
     rr_intervals = pd.Series(rr_intervals)
     rr_ma = rr_intervals.rolling(3)
 
-
-
-    # try:
-    #     signal_peak, waves_peak = nk.ecg_delineate(ecg_signal, rpeaks, sampling_rate=sample_Fs)
-    #     p_peaks = waves_peak['ECG_P_Peaks']
-    # except ValueError:
-    #     print('Exception raised!')
-    #     pass
-    # p_peaks = np.asarray(p_peaks, dtype=float)
-    # p_peaks = p_peaks[~np.isnan(p_peaks)]
-    # p_peaks = [int(a) for a in p_peaks]
+    try:
+        signal_peak, waves_peak = nk.ecg_delineate(ecg_signal, rpeaks, sampling_rate=sample_Fs)
+        p_peaks = waves_peak['ECG_P_Peaks']
+    except ValueError:
+        print('Exception raised!')
+        pass
+    p_peaks = np.asarray(p_peaks, dtype=float)
+    p_peaks = p_peaks[~np.isnan(p_peaks)]
+    p_peaks = [int(a) for a in p_peaks]
+    p_time = [x/sample_Fs for x in p_peaks]
+    p_diff = np.diff(p_time)
     # mean_P_Peaks = np.mean([signal[w] for w in p_peaks])
-    # hrv_time['mean_P_Peaks'] = mean_P_Peaks
+    hrv_time['var_P_time'] = stats.tvar(p_diff)
+    hrv_time['var_P_peaks'] = stats.tvar(signal[np.array(p_peaks)])
     
     hrv_time['age'] = age
     hrv_time['label'] = label
